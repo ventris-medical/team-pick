@@ -31,30 +31,46 @@
 </head>
 
 <body>
+    <img src="ventris-logo.png" alt="Ventris Logo" style="display: block; margin: 0 auto; max-width: 200px;">
     <h1>Team Pick! 🎲</h1>
     <div class="container">
         <div class="column">
             <input type="text" id="newName" placeholder="Add a name">
             <button onclick="addName()">Add</button>
-            <button onclick="removeName()">Remove</button>
             <h2>Players:</h2>
             <ul id="playerList"></ul>
             <label for="numTeams">Number of teams:</label>
             <input type="number" id="numTeams" min="2" value="2">
-            <button onclick="shuffleTeams()">Shuffle</button>
+            <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
         </div>
-        <div class="column" id="teamsContainer"></div>
     </div>
 
     <script>
-        let names = ["Jake", "Russell", "Milly", "Brenda", "Caitlyn", "Kim", "Molly", "Marisa"];
+        let names = [];
+        fetch('data/names.json')
+            .then(response => response.json())
+            .then(data => {
+                names = data;
+                updatePlayerList();
+            })
+            .catch(error => console.error('Error loading names:', error));
+
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addName();
+            }
+        }
 
         function updatePlayerList() {
             const playerList = document.getElementById('playerList');
             playerList.innerHTML = '';
-            names.forEach(name => {
+            names.forEach((name, index) => {
                 const li = document.createElement('li');
-                li.textContent = name;
+                li.innerHTML = `
+                <button onclick="removeName(${index})" class="remove-btn">x</button>
+                <span class="player-name">${name}</span>
+            `;
                 playerList.appendChild(li);
             });
         }
@@ -70,16 +86,9 @@
             }
         }
 
-        function removeName() {
-            const nameToRemove = document.getElementById('newName').value;
-            const index = names.indexOf(nameToRemove);
-            if (index > -1) {
-                names.splice(index, 1);
-                updatePlayerList();
-                document.getElementById('newName').value = '';
-            } else {
-                alert(nameToRemove + ' not in list');
-            }
+        function removeName(index) {
+            names.splice(index, 1);
+            updatePlayerList();
         }
 
         function shuffleTeams() {
@@ -95,27 +104,69 @@
 
             const teams = [];
             let start = 0;
+            let floater = null;
+
+            if (remainder === 1) {
+                // Randomly select a floater
+                const floaterIndex = Math.floor(Math.random() * shuffledNames.length);
+                floater = shuffledNames[floaterIndex];
+                // Remove the floater from the shuffled names
+                shuffledNames.splice(floaterIndex, 1);
+            }
+
             for (let i = 0; i < numTeams; i++) {
-                const end = start + teamSize + (i < remainder ? 1 : 0);
-                teams.push(shuffledNames.slice(start, end));
+                const end = start + teamSize + (i < remainder - 1 ? 1 : 0);
+                const team = shuffledNames.slice(start, end);
+
+                if (floater && (i === 0 || i === 1)) {
+                    team.push(floater);
+                }
+
+                teams.push(team);
                 start = end;
             }
 
-            const teamsContainer = document.getElementById('teamsContainer');
-            teamsContainer.innerHTML = '';
-            teams.forEach((team, index) => {
-                const teamDiv = document.createElement('div');
-                teamDiv.className = 'team';
-                teamDiv.innerHTML = `<h3>Team ${index + 1}</h3>`;
-                team.forEach(name => {
-                    teamDiv.innerHTML += `<p>${name}</p>`;
-                });
-                teamsContainer.appendChild(teamDiv);
-            });
+            localStorage.setItem('teams', JSON.stringify(teams));
+            window.location.href = 'teams.html';
         }
+
+        document.getElementById('newName').addEventListener('keypress', handleKeyPress);
 
         updatePlayerList();
     </script>
+
+    <style>
+        #playerList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #playerList li {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .remove-btn {
+            margin-right: 10px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8em;
+            padding: 2px 5px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-name {
+            flex-grow: 1;
+        }
+    </style>
 </body>
 
 </html>
