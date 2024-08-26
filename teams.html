@@ -11,6 +11,8 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #333333;
+            color: white;
         }
 
         .container {
@@ -20,10 +22,11 @@
         }
 
         .team {
-            border: 1px solid #ccc;
+            border: 1px solid #555555;
             padding: 10px;
             margin: 10px;
             min-width: 150px;
+            background-color: #444444;
         }
 
         .score {
@@ -34,6 +37,28 @@
         .button-container {
             margin-top: 20px;
             text-align: center;
+        }
+
+        button {
+            background-color: #555555;
+            color: white;
+            border: 1px solid #777777;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        a {
+            color: #add8e6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -116,6 +141,10 @@
 
         .team p[title] {
             cursor: help;
+        }
+
+        .team p[style*="color: red"] {
+            color: #ff6b6b !important;
         }
     </style>
 </body>
