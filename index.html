@@ -7,34 +7,32 @@
     <title>Team Pick</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Franklin Gothic ATF';
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #333333;
+            background-color: #212322;
             color: white;
         }
-
-        /* ... existing styles ... */
 
         .team {
             border: 1px solid #ccc;
             padding: 10px;
             margin-bottom: 10px;
-            background-color: #444444;
+            background-color: #212322;
         }
 
         input[type="text"],
         input[type="number"] {
-            background-color: #555555;
+            background-color: #212322;
             color: white;
             border: 1px solid #777777;
         }
 
         button,
         #shuffleLink {
-            background-color: #555555;
-            color: white;
+            background-color: #212322;
+            color: #65B2E8;
             border: 1px solid #777777;
         }
     </style>
@@ -137,7 +135,7 @@
             }
 
             localStorage.setItem('teams', JSON.stringify(teams));
-            window.location.href = 'teams.html';
+            window.location.href = 'game.html';
         }
 
         document.getElementById('newName').addEventListener('keypress', handleKeyPress);
@@ -159,7 +157,7 @@
 
         .remove-btn {
             margin-right: 10px;
-            background-color: #ff4d4d;
+            background-color: #BC3B4A;
             color: white;
             border: none;
             border-radius: 50%;

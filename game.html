@@ -4,15 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Results</title>
+    <title>Game Time.</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Franklin Gothic ATF';
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #333333;
+            background-color: #212322;
             color: white;
+        }
+
+        h1 {
+            font-family: 'Cairo';
+            font-weight: 700;
         }
 
         .container {
@@ -22,16 +27,29 @@
         }
 
         .team {
-            border: 1px solid #555555;
+            border: 1px solid #212322;
+            color: #212322;
             padding: 10px;
             margin: 10px;
             min-width: 150px;
-            background-color: #444444;
+            background-color: #5A7F71;
+        }
+
+        .team h3 {
+            border: 2px solid #212322;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: 'Franklin Gothic ATF Large Bold';
+            font-size: 2em;
+            margin-top: 0;
+            margin-bottom: 10px;
         }
 
         .score {
-            font-size: 1.2em;
+            font-size: 1.5em;
+            color: #212322;
             font-weight: bold;
+
         }
 
         .button-container {
@@ -40,9 +58,9 @@
         }
 
         button {
-            background-color: #555555;
+            background-color: #212322;
             color: white;
-            border: 1px solid #777777;
+            border: 1px solid #a7a7a7;
             padding: 5px 10px;
             cursor: pointer;
         }
@@ -64,7 +82,7 @@
 </head>
 
 <body>
-    <h1>Teams</h1>
+    <h1>Game Time.</h1>
     <div id="teamsContainer" class="container"></div>
     <div class="button-container">
         <button onclick="finishGame()">Finish Game</button>
@@ -76,26 +94,66 @@
         const teams = JSON.parse(localStorage.getItem('teams'));
         const teamsContainer = document.getElementById('teamsContainer');
         const scores = new Array(teams.length).fill(0);
+        const usedTeamNames = new Set();
+
+
+        let teamsData = {};
+        fetch('data/team_names.json')
+            .then(response => response.json())
+            .then(data => {
+                teamsData = data;
+                console.log('teamsData after fetch:', teamsData); // Log the data after assignment
+                renderTeams(); // Call renderTeams after data is loaded
+            })
+            .catch(error => console.error('Error loading names:', error));
+
+        function getRandomTeamName() {
+            const availableTeams = Object.keys(teamsData).filter(name => !usedTeamNames.has(name));
+            if (availableTeams.length === 0) return null;
+            const randomIndex = Math.floor(Math.random() * availableTeams.length);
+            const teamName = availableTeams[randomIndex];
+            usedTeamNames.add(teamName);
+            return teamName;
+        }
 
         function renderTeams() {
             teamsContainer.innerHTML = '';
             teams.forEach((team, index) => {
+                let teamName = getRandomTeamName();
+                const teamColor = teamsData[teamName];
+                teamName = 'Team ' + teamName + '!';
                 const teamDiv = document.createElement('div');
                 teamDiv.className = 'team';
-                teamDiv.innerHTML = `
-                    <h3>Team ${index + 1}</h3>
-                    <div class="score">Score: <span id="score-${index}">${scores[index]}</span></div>
-                    <button onclick="addPoint(${index})">Add Point</button>
-                `;
+                teamDiv.style.backgroundColor = teamColor;
+                teamDiv.innerHTML = `<h3>${teamName}</h3>`;
+
+                // Add player names
                 team.forEach(name => {
                     const playerP = document.createElement('p');
                     playerP.textContent = name;
                     if (index < 2 && teams[0].includes(name) && teams[1].includes(name)) {
-                        playerP.style.color = 'red';
+                        playerP.style.fontWeight = 'bold';
+                        playerP.style.color = 'black';
                         playerP.title = 'Floater (on both teams)';
+                        playerP.style.display = 'inline-block';
+                        playerP.style.border = '2px solid #212322';
+                        playerP.style.padding = '2px 4px';
+                        playerP.style.borderRadius = '8px';
                     }
                     teamDiv.appendChild(playerP);
                 });
+
+                // Add score and point button on the same line
+                const scoreAndButtonDiv = document.createElement('div');
+                scoreAndButtonDiv.style.display = 'flex';
+                scoreAndButtonDiv.style.justifyContent = 'space-between';
+                scoreAndButtonDiv.style.alignItems = 'center';
+                scoreAndButtonDiv.innerHTML = `
+                    <div class="score">Score: <span id="score-${index}">${scores[index]}</span></div>
+                    <button onclick="addPoint(${index})">Add Point</button>
+                `;
+                teamDiv.appendChild(scoreAndButtonDiv);
+
                 teamsContainer.appendChild(teamDiv);
             });
         }
@@ -133,18 +191,12 @@
     </script>
 
     <style>
-        /* ... existing styles ... */
-
-        .team p {
-            margin: 5px 0;
-        }
-
         .team p[title] {
             cursor: help;
         }
 
-        .team p[style*="color: red"] {
-            color: #ff6b6b !important;
+        .team p[style*="font-weight: bold"] {
+            color: black !important;
         }
     </style>
 </body>
