@@ -88,9 +88,10 @@
         <button onclick="finishGame()">Finish Game</button>
     </div>
     <div id="winnerAnnouncement"></div>
-    <img src="ventris-logo.png" alt="Ventris Logo" style="display: block; margin: 0 auto; max-width: 300px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+    <img src="ventris-logo.png" alt="Ventris Logo"
+        style="display: block; margin: 0 auto; max-width: 300px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
- 
+
 
     <script>
         const teams = JSON.parse(localStorage.getItem('teams'));
@@ -174,14 +175,14 @@
                 return winners;
             }, []);
 
-            // Store winning team information
-            const winningTeamInfo = {
-                teamIndex: winningTeams[0],
-                teamName: document.querySelector(`.team:nth-child(${winningTeams[0] + 1}) h3`).textContent,
-                players: teams[winningTeams[0]],
+            // Store winning team(s) information
+            const winningTeamsInfo = winningTeams.map(index => ({
+                teamIndex: index,
+                teamName: document.querySelector(`.team:nth-child(${index + 1}) h3`).textContent,
+                players: teams[index],
                 score: maxScore
-            };
-            localStorage.setItem('winningTeam', JSON.stringify(winningTeamInfo));
+            }));
+            localStorage.setItem('winningTeams', JSON.stringify(winningTeamsInfo));
 
             // Redirect to winners.html
             window.location.href = 'winners.html';

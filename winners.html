@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,35 +15,51 @@
             color: white;
             text-align: center;
         }
+
         .team {
             border: 1px solid #ccc;
             padding: 10px;
             margin-bottom: 10px;
             background-color: #212322;
         }
+
         h1 {
             color: #65B2E8;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
+
 <body>
     <div id="winningTeam"></div>
-    <img src="ventris-logo.png" alt="Ventris Logo" style="display: block; margin: 0 auto; max-width: 300px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+    <img src="ventris-logo.png" alt="Ventris Logo"
+        style="display: block; margin: 0 auto; max-width: 300px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const winningTeamInfo = JSON.parse(localStorage.getItem('winningTeam'));
-            if (winningTeamInfo) {
+            const winningTeamsInfo = JSON.parse(localStorage.getItem('winningTeams'));
+            if (winningTeamsInfo && winningTeamsInfo.length > 0) {
                 const winningTeamDiv = document.getElementById('winningTeam');
-                winningTeamDiv.innerHTML = `
-                    <h1>🎉 Congrats to ${winningTeamInfo.teamName} 🎉</h1>
+                if (winningTeamsInfo.length === 1) {
+                    winningTeamDiv.innerHTML = `
+                <h1>🎉 Congrats to ${winningTeamsInfo[0].teamName} 🎉</h1>
+            `;
+                    winningTeamsInfo[0].players.forEach(player => {
+                        winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
+                    });
+                } else {
+                    winningTeamDiv.innerHTML = `<h1>🎉 It's a draw! 🎉</h1>`;
+                    winningTeamsInfo.forEach(team => {
+                        winningTeamDiv.innerHTML += `
+                    <div class="team">
+                        <h2>${team.teamName}</h2>
+                        ${team.players.map(player => `<p>${player}</p>`).join('')}
+                    </div>
                 `;
-                winningTeamInfo.players.forEach(player => {
-                    winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
-                });
-    
+                    });
+                }
+
                 // Trigger confetti animation
                 confetti({
                     particleCount: 500,
@@ -55,4 +72,5 @@
         });
     </script>
 </body>
+
 </html>
