@@ -88,7 +88,11 @@
         <button onclick="finishGame()">Finish Game</button>
     </div>
     <div id="winnerAnnouncement"></div>
-    <a href="index.html">Back to Player List</a>
+    <script>
+        function finishGame() {
+            window.location.href = 'winners.html';
+        }
+    </script>
 
     <script>
         const teams = JSON.parse(localStorage.getItem('teams'));
@@ -167,24 +171,22 @@
             const maxScore = Math.max(...scores);
             const winningTeams = scores.reduce((winners, score, index) => {
                 if (score === maxScore) {
-                    winners.push(index + 1);
+                    winners.push(index);
                 }
                 return winners;
             }, []);
 
-            const winnerAnnouncement = document.getElementById('winnerAnnouncement');
-            if (winningTeams.length === 1) {
-                winnerAnnouncement.textContent = `Game Over! Team ${winningTeams[0]} wins with ${maxScore} points!`;
-            } else {
-                winnerAnnouncement.textContent = `Game Over! It's a tie between Teams ${winningTeams.join(', ')} with ${maxScore} points!`;
-            }
+            // Store winning team information
+            const winningTeamInfo = {
+                teamIndex: winningTeams[0],
+                teamName: document.querySelector(`.team:nth-child(${winningTeams[0] + 1}) h3`).textContent,
+                players: teams[winningTeams[0]],
+                score: maxScore
+            };
+            localStorage.setItem('winningTeam', JSON.stringify(winningTeamInfo));
 
-            // Disable all "Add Point" buttons
-            const addPointButtons = document.querySelectorAll('button[onclick^="addPoint"]');
-            addPointButtons.forEach(button => button.disabled = true);
-
-            // Disable the "Finish Game" button
-            document.querySelector('button[onclick="finishGame()"]').disabled = true;
+            // Redirect to winners.html
+            window.location.href = 'winners.html';
         }
 
         renderTeams();

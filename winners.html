@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winners</title>
+    <style>
+        body {
+            font-family: 'Franklin Gothic ATF';
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #212322;
+            color: white;
+            text-align: center;
+        }
+        .team {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #212322;
+        }
+        h1 {
+            color: #65B2E8;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <img src="ventris-logo.png" alt="Ventris Logo" style="display: block; margin: 0 auto; max-width: 200px;">
+    <div id="winningTeam"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const winningTeamInfo = JSON.parse(localStorage.getItem('winningTeam'));
+            if (winningTeamInfo) {
+                const winningTeamDiv = document.getElementById('winningTeam');
+                winningTeamDiv.innerHTML = `
+                    <h1>🎉 Congrats to ${winningTeamInfo.teamName} 🎉</h1>
+                `;
+                winningTeamInfo.players.forEach(player => {
+                    winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
+                });
+    
+                // Trigger confetti animation
+                confetti({
+                    particleCount: 500,
+                    spread: 180,
+                    origin: { x: 0.5, y: 0.5 }
+                });
+            } else {
+                document.body.innerHTML += '<p>No winning team found. Please go back and finish the game.</p>';
+            }
+        });
+    </script>
+</body>
+</html>
