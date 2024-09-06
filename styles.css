@@ -19,3 +19,140 @@ body {
         display: none !important;
     }
 }
+
+/* Leaderboard styles */
+#leaderboard {
+    background-color: #212322;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#leaderboard h2 {
+    color: #5A7F71;
+}
+
+#leaderboardTable {
+    width: 100%;
+    color: white;
+    background-color: #212322;
+    border-collapse: collapse;
+}
+
+#leaderboardTable th,
+#leaderboardTable td {
+    padding: 8px;
+    background-color: #212322;
+}
+
+#leaderboardTable th {
+    background-color: #5A7F71;
+    color: #212322;
+    border-bottom: 1px solid #5A7F71;
+}
+
+#leaderboardTable td {
+    border-left: 1px solid #5A7F71;
+    border-right: 1px solid #5A7F71;
+}
+
+#leaderboardTable tr:last-child td {
+    border-bottom: 1px solid #5A7F71;
+}
+
+#leaderboardTable td:first-child {
+    border-left: none;
+}
+
+#leaderboardTable td:last-child {
+    border-right: none;
+}
+
+/* Remove this rule to eliminate the bottom border */
+/* #leaderboardTable tr:last-child td {
+    border-bottom: 1px solid #5A7F71;
+} */
+
+#clearLeaderboardBtn {
+    background-color: #BC3B4A;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+/* DataTables specific styles */
+.dataTables_wrapper {
+    background-color: #212322;
+    color: white;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_processing,
+.dataTables_wrapper .dataTables_paginate {
+    color: white;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: white !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #212322 !important;
+    background-color: #5A7F71 !important;
+    border-color: #5A7F71 !important;
+}
+
+/* General button styles */
+button,
+#shuffleLink,
+#newGameBtn,
+.timer-button,
+#finish-button {
+    background-color: #212322;
+    color: #5A7F71;
+    border: 1px solid #5A7F71;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover,
+#shuffleLink:hover,
+#newGameBtn:hover,
+.timer-button:hover,
+#finish-button:hover {
+    background-color: #5A7F71;
+    color: #212322;
+}
+
+/* Specific styles for different buttons */
+#shuffleLink {
+    display: inline-block;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 1em;
+    width: 100px;
+}
+
+#newGameBtn {
+    font-size: 1.2em;
+}
+
+#clearLeaderboardBtn {
+    background-color: #BC3B4A;
+    color: white;
+    border: none;
+}
+
+#clearLeaderboardBtn:hover {
+    background-color: white;
+    color: #BC3B4A;
+}

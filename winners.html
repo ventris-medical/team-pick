@@ -7,71 +7,164 @@
     <title>Winners</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="images/ventris-icon.png" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        body {
+        .winner-display {
             text-align: center;
+            margin-bottom: 20px;
         }
-
-        .team {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #212322;
+        .team-name {
+            font-size: 2em;  /* Increased from 1.5em */
+            margin-bottom: 5px;
+            font-weight: bold;  /* Added bold */
         }
-
-        h1 {
-            color: #65B2E8;
+        .player-list {
+            font-size: 1.5em;  /* Increased from 1.2em */
+            margin-bottom: 15px;
+            font-weight: bold;  /* Added bold */
         }
-
-        button {
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #newGameBtn {
             background-color: #212322;
             color: #5A7F71;
             border: 1px solid #5A7F71;
-            padding: 5px 10px;
+            padding: 10px 20px;
+            font-size: 1.2em;
             cursor: pointer;
             border-radius: 5px;
-            font-size: 1.5em;
-            margin-top: 100px;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 
 <body>
-    <div id="winningTeam"></div>
-    <button id="newGameBtn">Start New Game</button>
+    <div id="winningTeam" class="winner-display"></div>
+    <div class="button-container">
+        <button id="newGameBtn">Start New Game</button>
+    </div>
+    <div id="leaderboard">
+        <h2>Leaderboard</h2>
+        <table id="leaderboardTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Wins</th>
+                    <th>Games Played</th>
+                    <th>Floater Count</th>
+                    <th>Win Ratio</th>
+                    <th>Win Ratio (No Floater)</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardList"></tbody>
+        </table>
+    </div>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
         style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const winningTeamsInfo = JSON.parse(localStorage.getItem('winningTeams'));
-            if (winningTeamsInfo && winningTeamsInfo.length > 0) {
-                const winningTeamDiv = document.getElementById('winningTeam');
-                if (winningTeamsInfo.length === 1) {
-                    winningTeamDiv.innerHTML = `
-                <h1>🎉 Congrats to ${winningTeamsInfo[0].teamName} 🎉</h1>
-            `;
-                    winningTeamsInfo[0].players.forEach(player => {
-                        winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
-                    });
-                } else {
-                    winningTeamDiv.innerHTML = `<h1>🎉 It's a draw! 🎉</h1>`;
-                }
+            const playerStats = JSON.parse(localStorage.getItem('playerStats'));
+            console.log('Player stats after game:', playerStats);
 
-                // Trigger confetti animation
-                confetti({
-                    particleCount: 500,
-                    spread: 180,
-                    origin: { x: 0.5, y: 0.5 }
-                });
-            } else {
-                document.body.innerHTML += '<p>No winning team found. Please go back and finish the game.</p>';
-            }
+            // Load team colors
+            fetch('data/team_names.json')
+                .then(response => response.json())
+                .then(teamColors => {
+                    if (winningTeamsInfo && winningTeamsInfo.length > 0) {
+                        const winningTeamDiv = document.getElementById('winningTeam');
+                        if (winningTeamsInfo.length === 1) {
+                            const team = winningTeamsInfo[0];
+                            const teamName = team.teamName.replace('Team ', '');
+                            const teamColor = teamColors[teamName] || '#FFFFFF';
+                            winningTeamDiv.innerHTML = `
+                                <h1>🎉 Congrats to the winners! 🎉</h1>
+                                <div class="team-name" style="color: ${teamColor}">${team.teamName}</div>
+                                <div class="player-list" style="color: ${teamColor}">${team.players.join(', ')}</div>
+                            `;
+                        } else {
+                            winningTeamDiv.innerHTML = `<h1>🎉 It's a draw! 🎉</h1>`;
+                            winningTeamsInfo.forEach(team => {
+                                const teamName = team.teamName.replace('Team ', '');
+                                const teamColor = teamColors[teamName] || '#FFFFFF';
+                                winningTeamDiv.innerHTML += `
+                                    <div class="team-name" style="color: ${teamColor}">${team.teamName}</div>
+                                    <div class="player-list" style="color: ${teamColor}">${team.players.join(', ')}</div>
+                                `;
+                            });
+                        }
+
+                        // Trigger confetti animation
+                        confetti({
+                            particleCount: 500,
+                            spread: 180,
+                            origin: { x: 0.5, y: 0.5 }
+                        });
+
+                        console.log('Game completed successfully');
+                    } else {
+                        document.body.innerHTML += '<p>No winning team found. Please go back and finish the game.</p>';
+                    }
+
+                    updateLeaderboard();
+                })
+                .catch(error => console.error('Error loading team colors:', error));
+
             document.getElementById('newGameBtn').addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
         });
+
+        function updateLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = '';
+            
+            const playerStats = JSON.parse(localStorage.getItem('playerStats')) || {};
+            console.log('Updating leaderboard with:', playerStats);
+            
+            const sortedPlayers = Object.entries(playerStats)
+                .sort((a, b) => b[1].wins - a[1].wins);
+
+            if (sortedPlayers.length === 0) {
+                leaderboardList.innerHTML = '<tr><td colspan="6">No data available</td></tr>';
+            } else {
+                sortedPlayers.forEach(([name, stats]) => {
+                    const winRatio = stats.gamesPlayed > 0 ? (stats.wins / stats.gamesPlayed).toFixed(2) : '0.00';
+                    const winRatioWithoutFloater = stats.gamesWithoutFloater > 0 ? 
+                        (stats.winsWithoutFloater / stats.gamesWithoutFloater).toFixed(2) : '0.00';
+                    
+                    const row = `
+                        <tr>
+                            <td>${name}</td>
+                            <td>${stats.wins}</td>
+                            <td>${stats.gamesPlayed}</td>
+                            <td>${stats.floaterCount}</td>
+                            <td>${winRatio}</td>
+                            <td>${winRatioWithoutFloater}</td>
+                        </tr>
+                    `;
+                    leaderboardList.innerHTML += row;
+                });
+            }
+
+            // Initialize or refresh DataTable
+            if ($.fn.DataTable.isDataTable('#leaderboardTable')) {
+                $('#leaderboardTable').DataTable().destroy();
+            }
+            $('#leaderboardTable').DataTable({
+                paging: false,
+                searching: false,
+                ordering: true,
+                info: false,
+                dom: 'rt',
+                order: [[1, 'desc']], // Sort by the second column (Wins) in descending order
+            });
+        }
     </script>
 </body>
 

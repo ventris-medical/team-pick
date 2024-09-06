@@ -39,12 +39,56 @@
             display: inline-block;
             margin-top: 20px;
             margin-bottom: 20px;
-            text-align: left;
-            border: 1px solid #777777;
+            text-align: center;
+            border: 1px solid #5A7F71;
             border-radius: 5px;
+            padding: 8px;
+            background-color: #212322;
+            color: #5A7F71;
+            text-decoration: none;
+            font-size: 1em;
+            width: 100px;
+            margin-left: 0;  /* Change this from auto to 0 */
+            margin-right: auto;
+        }
+
+        #shuffleLink:hover {
+            background-color: #5A7F71;
+            color: #212322;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 45%;
+        }
+        #leaderboard {
+            background-color: #212322;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #leaderboard h2 {
+            color: #5A7F71;
+        }
+        #leaderboard ol {
+            color: white;
+            padding-left: 20px;
+        }
+        #clearLeaderboardBtn {
+            background-color: #BC3B4A;
+            color: white;
+            border: none;
             padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
         }
     </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
 </head>
 
 <body>
@@ -57,22 +101,63 @@
             <ul id="playerList"></ul>
             <label for="numTeams">Number of teams:</label>
             <input type="number" id="numTeams" min="2" value="2">
+            <div>
+                <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
+            </div>
+        </div>
+        <div class="column">
+            <div id="leaderboard">
+                <h2>Leaderboard</h2>
+                <table id="leaderboardTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Wins</th>
+                            <th>Games Played</th>
+                            <th>Floater Count</th>
+                            <th>Win Ratio</th>
+                            <th>Win Ratio (No Floater)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardList"></tbody>
+                </table>
+                <button id="clearLeaderboardBtn" onclick="clearLeaderboard()">Clear Leaderboard</button>
+            </div>
         </div>
     </div>
-    <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
         style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
     <script>
         let names = [];
-        fetch('data/names.json')
-            .then(response => response.json())
-            .then(data => {
-                names = data;
-                updatePlayerList();
-            })
-            .catch(error => console.error('Error loading names:', error));
+        let playerStats = {};
 
+        // Load names and initialize player stats
+        function initializeData() {
+            fetch('data/names.json')
+                .then(response => response.json())
+                .then(data => {
+                    names = data;
+                    // Initialize player stats from localStorage or create new
+                    playerStats = JSON.parse(localStorage.getItem('playerStats')) || {};
+                    console.log('Loaded playerStats:', playerStats);
+                    names.forEach(name => {
+                        if (!playerStats.hasOwnProperty(name)) {
+                            playerStats[name] = {
+                                wins: 0,
+                                gamesPlayed: 0,
+                                floaterCount: 0,
+                                winsWithoutFloater: 0,
+                                gamesWithoutFloater: 0
+                            };
+                        }
+                    });
+                    localStorage.setItem('playerStats', JSON.stringify(playerStats));
+                    updatePlayerList();
+                    updateLeaderboard();
+                })
+                .catch(error => console.error('Error loading names:', error));
+        }
 
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
@@ -97,7 +182,19 @@
             const newName = document.getElementById('newName').value;
             if (newName && !names.includes(newName)) {
                 names.push(newName);
+                // Initialize wins for new player
+                if (!playerStats.hasOwnProperty(newName)) {
+                    playerStats[newName] = {
+                        wins: 0,
+                        gamesPlayed: 0,
+                        floaterCount: 0,
+                        winsWithoutFloater: 0,
+                        gamesWithoutFloater: 0
+                    };
+                    localStorage.setItem('playerStats', JSON.stringify(playerStats));
+                }
                 updatePlayerList();
+                updateLeaderboard();
                 document.getElementById('newName').value = '';
             } else if (names.includes(newName)) {
                 alert(newName + ' already in list');
@@ -148,9 +245,89 @@
             window.location.href = 'game.html';
         }
 
+        function clearLeaderboard() {
+            if (confirm("Are you sure you want to clear the leaderboard? This action cannot be undone.")) {
+                localStorage.removeItem('playerStats');
+                playerStats = {};
+                names.forEach(name => {
+                    playerStats[name] = {
+                        wins: 0,
+                        gamesPlayed: 0,
+                        floaterCount: 0,
+                        winsWithoutFloater: 0,
+                        gamesWithoutFloater: 0
+                    };
+                });
+                localStorage.setItem('playerStats', JSON.stringify(playerStats));
+                console.log('Leaderboard data cleared');
+                updateLeaderboard();
+            }
+        }
+
+        function updateLeaderboard() {
+            const leaderboardDiv = document.getElementById('leaderboard');
+            const leaderboardList = document.getElementById('leaderboardList');
+            
+            console.log('Updating leaderboard with:', playerStats);
+            
+            const playersWithData = Object.entries(playerStats).filter(([name, stats]) => stats.gamesPlayed > 0);
+            
+            if (playersWithData.length === 0) {
+                leaderboardDiv.innerHTML = '<h2>Leaderboard</h2><p>...</p>';
+            } else {
+                leaderboardList.innerHTML = '';
+                const sortedPlayers = playersWithData.sort((a, b) => b[1].wins - a[1].wins);
+
+                sortedPlayers.forEach(([name, stats]) => {
+                    const winRatio = (stats.wins / stats.gamesPlayed).toFixed(2);
+                    const winRatioWithoutFloater = stats.gamesWithoutFloater > 0 ? 
+                        (stats.winsWithoutFloater / stats.gamesWithoutFloater).toFixed(2) : '0.00';
+                    
+                    const row = `
+                        <tr>
+                            <td>${name}</td>
+                            <td>${stats.wins}</td>
+                            <td>${stats.gamesPlayed}</td>
+                            <td>${stats.floaterCount}</td>
+                            <td>${winRatio}</td>
+                            <td>${winRatioWithoutFloater}</td>
+                        </tr>
+                    `;
+                    leaderboardList.innerHTML += row;
+                });
+
+                // Initialize or refresh DataTable
+                if ($.fn.DataTable.isDataTable('#leaderboardTable')) {
+                    $('#leaderboardTable').DataTable().destroy();
+                }
+                $('#leaderboardTable').DataTable({
+                    paging: false,
+                    searching: false,
+                    ordering: true,
+                    info: false,
+                    dom: 'rt',
+                    order: [[1, 'desc']], // Sort by the second column (Wins) in descending order
+                });
+            }
+        }
+
+        function resetLeaderboardData() {
+            localStorage.removeItem('playerStats');
+            playerStats = {};
+            console.log('Leaderboard data reset');
+            updateLeaderboard();
+        }
+
         document.getElementById('newName').addEventListener('keypress', handleKeyPress);
 
-        updatePlayerList();
+        // Call initializeData when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+            console.log('DOM content loaded, initializing data');
+        });
+
+        // For debugging: add this button to your HTML
+        // <button onclick="resetLeaderboardData()">Reset Leaderboard Data</button>
     </script>
 
     <style>
@@ -184,6 +361,48 @@
         .player-name {
             flex-grow: 1;
         }
+    </style>
+
+    <style>
+        /* ... existing styles ... */
+
+        #leaderboardTable {
+            width: 100%;
+            color: white;
+            background-color: #212322;
+            border-collapse: collapse;
+        }
+
+        #leaderboardTable th,
+        #leaderboardTable td {
+            padding: 8px;
+            background-color: #212322; /* Match website background */
+        }
+
+        #leaderboardTable th {
+            background-color: #5A7F71;
+            color: #212322;
+            border-bottom: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable td {
+            border-left: 1px solid #5A7F71;
+            border-right: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable tr:last-child td {
+            border-bottom: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable td:first-child {
+            border-left: none;
+        }
+
+        #leaderboardTable td:last-child {
+            border-right: none;
+        }
+
+        /* ... rest of the styles ... */
     </style>
 </body>
 
