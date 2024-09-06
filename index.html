@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Pick</title>
+    <link rel="icon" href="images/ventris-icon.png" type="image/x-icon">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .team {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #212322;
+
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            background-color: #212322;
+            font-family: 'Franklin Gothic';
+            color: white;
+            border: 1px solid #777777;
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+
+        button,
+        #shuffleLink {
+            background-color: #212322;
+            color: #5A7F71;
+            border-radius: 5px;
+            border: 1px solid #777777;
+            padding: 5px 10px;
+        }
+
+        #shuffleLink {
+            display: inline-block;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+            border: 1px solid #777777;
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Team Pick! 🎲</h1>
+    <div class="container">
+        <div class="column">
+            <input type="text" id="newName" placeholder="Add a name">
+            <button onclick="addName()">Add</button>
+            <h2>Players:</h2>
+            <ul id="playerList"></ul>
+            <label for="numTeams">Number of teams:</label>
+            <input type="number" id="numTeams" min="2" value="2">
+        </div>
+    </div>
+    <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
+    <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
+        style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+
+    <script>
+        let names = [];
+        fetch('data/names.json')
+            .then(response => response.json())
+            .then(data => {
+                names = data;
+                updatePlayerList();
+            })
+            .catch(error => console.error('Error loading names:', error));
+
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                addName();
+            }
+        }
+
+        function updatePlayerList() {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = '';
+            names.forEach((name, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                <button onclick="removeName(${index})" class="remove-btn">x</button>
+                <span class="player-name">${name}</span>
+            `;
+                playerList.appendChild(li);
+            });
+        }
+
+        function addName() {
+            const newName = document.getElementById('newName').value;
+            if (newName && !names.includes(newName)) {
+                names.push(newName);
+                updatePlayerList();
+                document.getElementById('newName').value = '';
+            } else if (names.includes(newName)) {
+                alert(newName + ' already in list');
+            }
+        }
+
+        function removeName(index) {
+            names.splice(index, 1);
+            updatePlayerList();
+        }
+
+        function shuffleTeams() {
+            const numTeams = parseInt(document.getElementById('numTeams').value);
+            if (numTeams < 2 || numTeams > names.length) {
+                alert('Invalid number of teams');
+                return;
+            }
+
+            const shuffledNames = [...names].sort(() => Math.random() - 0.5);
+            const teamSize = Math.floor(shuffledNames.length / numTeams);
+            const remainder = shuffledNames.length % numTeams;
+
+            const teams = [];
+            let start = 0;
+            let floater = null;
+
+            if (remainder === 1) {
+                // Randomly select a floater
+                const floaterIndex = Math.floor(Math.random() * shuffledNames.length);
+                floater = shuffledNames[floaterIndex];
+                // Remove the floater from the shuffled names
+                shuffledNames.splice(floaterIndex, 1);
+            }
+
+            for (let i = 0; i < numTeams; i++) {
+                const end = start + teamSize + (i < remainder - 1 ? 1 : 0);
+                const team = shuffledNames.slice(start, end);
+
+                if (floater && (i === 0 || i === 1)) {
+                    team.push(floater);
+                }
+
+                teams.push(team);
+                start = end;
+            }
+
+            localStorage.setItem('teams', JSON.stringify(teams));
+            window.location.href = 'game.html';
+        }
+
+        document.getElementById('newName').addEventListener('keypress', handleKeyPress);
+
+        updatePlayerList();
+    </script>
+
+    <style>
+        #playerList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #playerList li {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .remove-btn {
+            margin-right: 10px;
+            background-color: #BC3B4A;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8em;
+            padding: 2px 5px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .player-name {
+            flex-grow: 1;
+        }
+    </style>
+</body>
+
+</html>

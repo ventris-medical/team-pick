@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winners</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="images/ventris-icon.png" type="image/x-icon">
+    <style>
+        body {
+            text-align: center;
+        }
+
+        .team {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #212322;
+        }
+
+        h1 {
+            color: #65B2E8;
+        }
+
+        button {
+            background-color: #212322;
+            color: #5A7F71;
+            border: 1px solid #5A7F71;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1.5em;
+            margin-top: 100px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+
+<body>
+    <div id="winningTeam"></div>
+    <button id="newGameBtn">Start New Game</button>
+    <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
+        style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const winningTeamsInfo = JSON.parse(localStorage.getItem('winningTeams'));
+            if (winningTeamsInfo && winningTeamsInfo.length > 0) {
+                const winningTeamDiv = document.getElementById('winningTeam');
+                if (winningTeamsInfo.length === 1) {
+                    winningTeamDiv.innerHTML = `
+                <h1>🎉 Congrats to ${winningTeamsInfo[0].teamName} 🎉</h1>
+            `;
+                    winningTeamsInfo[0].players.forEach(player => {
+                        winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
+                    });
+                } else {
+                    winningTeamDiv.innerHTML = `<h1>🎉 It's a draw! 🎉</h1>`;
+                }
+
+                // Trigger confetti animation
+                confetti({
+                    particleCount: 500,
+                    spread: 180,
+                    origin: { x: 0.5, y: 0.5 }
+                });
+            } else {
+                document.body.innerHTML += '<p>No winning team found. Please go back and finish the game.</p>';
+            }
+            document.getElementById('newGameBtn').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+
+</html>

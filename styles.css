@@ -1,0 +1,21 @@
+@font-face {
+    font-family: 'Franklin Gothic';
+    src: url('fonts/franklin-gothic-atf-regular.otf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Franklin Gothic';
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #212322;
+    color: white;
+}
+
+@media screen and (max-width: 768px) {
+    .ventris-logo {
+        display: none !important;
+    }
+}

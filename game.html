@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Time.</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="images/ventris-icon.png" type="image/x-icon">
+    <style>
+        h1 {
+            font-weight: 700;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .team {
+            border: 1px solid #212322;
+            border-radius: 10px;
+            color: #212322;
+            padding: 10px;
+            margin: 10px;
+            min-width: 150px;
+            background-color: #5A7F71;
+        }
+
+        .team h3 {
+            border: 2px solid #212322;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 2em;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 1.5em;
+            color: #212322;
+            font-weight: bold;
+        }
+
+        .button-container {
+            background-color: #212322;
+            color: #5A7F71;
+            border: 1px solid #5A7F71;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 25px auto;
+            text-align: center;
+            position: static;
+            transform: none;
+        }
+
+        #finish-button {
+            font-size: 1.5em;
+            margin: 10px;
+            color: #5A7F71;
+        }
+
+        button {
+            background-color: #212322;
+            color: white;
+            border: 1px solid #212322;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        a {
+            color: #add8e6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .button-container {
+                position: sticky;
+                bottom: 20px;
+                z-index: 100;
+            }
+        }
+
+        #timer-container {
+            background-color: #212322;
+            color: #5A7F71;
+            border-radius: 5px;
+            margin: 25px auto;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .timer-button {
+            font-size: 1em;
+            margin: 10px;
+            color: #5A7F71;
+            background-color: #212322;
+            border: 1px solid #5A7F71;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #timer-input {
+            width: 60px;
+            font-size: 1em;
+            margin-right: 10px;
+            background-color: #212322;
+            color: white;
+            border: 1px solid #777777;
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+
+        #timer-display {
+            font-size: 3em;
+            margin-top: 10px;
+        }
+
+        .time-critical {
+            color: #BC3B4A;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .time-up {
+            animation: pulse 0.5s infinite;
+            color: #BC3B4A;
+            font-weight: bold;
+        }
+
+        #time-up-message {
+            font-size: 2em;
+            color: #BC3B4A;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #stop-emojis {
+            font-size: 3em;
+            text-align: center;
+            display: none;
+        }
+
+        @keyframes flash {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0; }
+        }
+
+        .flashing {
+            animation: flash 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Game Time.</h1>
+    <div id="teamsContainer" class="container"></div>
+    <div id="winnerAnnouncement"></div>
+    <div class="button-container">
+        <button id="finish-button" onclick="finishGame()">Finish Game</button>
+    </div>
+    <div id="timer-container">
+        <input type="number" id="timer-input" min="1" value="60">
+        <button class="timer-button" onclick="startTimer()">Start Timer</button>
+        <button class="timer-button" onclick="restartTimer()">Restart Timer</button>
+        <div id="timer-display"></div>
+    </div>
+    <div id="time-up-message"></div>
+    <div id="stop-emojis">🛑🛑🛑</div>
+    <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
+        style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+
+    <script>
+        const teams = JSON.parse(localStorage.getItem('teams'));
+        const teamsContainer = document.getElementById('teamsContainer');
+        const scores = new Array(teams.length).fill(0);
+        const usedTeamNames = new Set();
+
+        let teamsData = {};
+        fetch('data/team_names.json')
+            .then(response => response.json())
+            .then(data => {
+                teamsData = data;
+                console.log('teamsData after fetch:', teamsData); // Log the data after assignment
+                renderTeams(); // Call renderTeams after data is loaded
+            })
+            .catch(error => console.error('Error loading names:', error));
+
+        function getRandomTeamName() {
+            const availableTeams = Object.keys(teamsData).filter(name => !usedTeamNames.has(name));
+            if (availableTeams.length === 0) return null;
+            const randomIndex = Math.floor(Math.random() * availableTeams.length);
+            const teamName = availableTeams[randomIndex];
+            usedTeamNames.add(teamName);
+            return teamName;
+        }
+
+        function renderTeams() {
+            teamsContainer.innerHTML = '';
+            teams.forEach((team, index) => {
+                let teamName = getRandomTeamName();
+                const teamColor = teamsData[teamName];
+                teamName = 'Team ' + teamName;
+                const teamDiv = document.createElement('div');
+                teamDiv.className = 'team';
+                teamDiv.style.backgroundColor = teamColor;
+                teamDiv.innerHTML = `<h3>${teamName}</h3>`;
+
+                // Add player names
+                team.forEach(name => {
+                    const playerP = document.createElement('p');
+                    playerP.textContent = name;
+                    if (index < 2 && teams[0].includes(name) && teams[1].includes(name)) {
+                        playerP.textContent = 'Floater: ' + name;
+                        playerP.style.fontWeight = 'bold';
+                        playerP.style.color = '#212322';
+                        playerP.title = 'Floater (on both teams)';
+                        playerP.style.display = 'inline-block';
+                        playerP.style.border = '2px solid #212322';
+                        playerP.style.padding = '2px 4px';
+                        playerP.style.borderRadius = '8px';
+                    }
+                    teamDiv.appendChild(playerP);
+                });
+
+                // Add score and point button on the same line
+                const scoreAndButtonDiv = document.createElement('div');
+                scoreAndButtonDiv.style.display = 'flex';
+                scoreAndButtonDiv.style.justifyContent = 'space-between';
+                scoreAndButtonDiv.style.alignItems = 'center';
+                scoreAndButtonDiv.innerHTML = `
+                    <div class="score">Points: <span id="score-${index}">${scores[index]}</span></div>
+                    <button onclick="addPoint(${index})">Add Point</button>
+                `;
+                teamDiv.appendChild(scoreAndButtonDiv);
+
+                teamsContainer.appendChild(teamDiv);
+            });
+        }
+
+        function addPoint(teamIndex) {
+            scores[teamIndex]++;
+            document.getElementById(`score-${teamIndex}`).textContent = scores[teamIndex];
+        }
+
+        let timerInterval;
+        const timerDisplay = document.getElementById('timer-display');
+        const timerInput = document.getElementById('timer-input');
+
+        timerInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission if within a form
+                startTimer();
+            }
+        });
+
+        let animationTimeout;
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            clearTimeout(animationTimeout);
+            let seconds = parseInt(timerInput.value);
+            if (isNaN(seconds) || seconds < 1) {
+                alert('Please enter a valid number of seconds.');
+                return;
+            }
+
+            document.getElementById('time-up-message').style.display = 'none';
+            document.getElementById('stop-emojis').style.display = 'none';
+            timerDisplay.classList.remove('time-up', 'time-critical');
+            timerDisplay.style.color = ''; // Reset color
+            updateTimerDisplay(seconds);
+            timerInterval = setInterval(() => {
+                seconds--;
+                updateTimerDisplay(seconds);
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.classList.add('time-up');
+                    document.getElementById('time-up-message').textContent = "Time's up!";
+                    document.getElementById('time-up-message').style.display = 'block';
+                    document.getElementById('stop-emojis').style.display = 'block';
+                    document.getElementById('stop-emojis').classList.add('flashing');
+                    playAlertSound();
+
+                    // Stop animations after 3 seconds, but keep elements visible and timer red
+                    animationTimeout = setTimeout(() => {
+                        document.getElementById('stop-emojis').classList.remove('flashing');
+                        timerDisplay.classList.remove('time-up');
+                        timerDisplay.style.color = '#BC3B4A'; // Keep timer red
+                    }, 3000);
+                }
+            }, 1000);
+        }
+
+        function restartTimer() {
+            clearInterval(timerInterval);
+            clearTimeout(animationTimeout);
+            timerDisplay.textContent = '';
+            timerInput.value = '60'; // Reset to default value
+            timerDisplay.classList.remove('time-up', 'time-critical');
+            timerDisplay.style.color = ''; // Reset color
+            document.getElementById('time-up-message').style.display = 'none';
+            document.getElementById('stop-emojis').style.display = 'none';
+            document.getElementById('stop-emojis').classList.remove('flashing');
+        }
+
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            timerDisplay.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            
+            if (seconds <= 5) {
+                timerDisplay.classList.add('time-critical');
+            } else {
+                timerDisplay.classList.remove('time-critical');
+            }
+        }
+
+        function finishGame() {
+            clearInterval(timerInterval);
+            clearTimeout(animationTimeout);
+            const maxScore = Math.max(...scores);
+            const winningTeams = scores.reduce((winners, score, index) => {
+                if (score === maxScore) {
+                    winners.push(index);
+                }
+                return winners;
+            }, []);
+
+            // Store winning team(s) information
+            const winningTeamsInfo = winningTeams.map(index => ({
+                teamIndex: index,
+                teamName: document.querySelector(`.team:nth-child(${index + 1}) h3`).textContent,
+                players: teams[index],
+                score: maxScore
+            }));
+            localStorage.setItem('winningTeams', JSON.stringify(winningTeamsInfo));
+
+            // Redirect to winners.html
+            window.location.href = 'winners.html';
+        }
+
+        function playAlertSound() {
+            const audio = new Audio('data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=');
+            audio.play();
+        }
+
+        renderTeams();
+    </script>
+
+    <style>
+        .team p[title] {
+            cursor: help;
+        }
+
+        .team p[style*="font-weight: bold"] {
+            color: #212322 !important;
+        }
+    </style>
+</body>
+
+</html>
