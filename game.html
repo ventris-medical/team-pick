@@ -249,6 +249,7 @@
         const teamsContainer = document.getElementById('teamsContainer');
         const scores = new Array(teams.length).fill(0);
         const usedTeamNames = new Set();
+        let playerWins = JSON.parse(localStorage.getItem('playerWins')) || {};
 
         let teamsData = {};
         fetch('data/team_names.json')
@@ -447,6 +448,22 @@
                 players: teams[index],
                 score: maxScore
             }));
+
+            // Update player wins
+            winningTeamsInfo.forEach(team => {
+                team.players.forEach(player => {
+                    if (playerWins.hasOwnProperty(player)) {
+                        playerWins[player]++;
+                    } else {
+                        playerWins[player] = 1;
+                    }
+                });
+            });
+
+            console.log('Updated playerWins:', playerWins);
+
+            // Store updated player wins and winning teams info
+            localStorage.setItem('playerWins', JSON.stringify(playerWins));
             localStorage.setItem('winningTeams', JSON.stringify(winningTeamsInfo));
 
             // Redirect to winners.html

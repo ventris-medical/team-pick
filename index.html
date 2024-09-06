@@ -44,6 +44,36 @@
             border-radius: 5px;
             padding: 5px 10px;
         }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 45%;
+        }
+        #leaderboard {
+            background-color: #212322;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #leaderboard h2 {
+            color: #5A7F71;
+        }
+        #leaderboard ol {
+            color: white;
+            padding-left: 20px;
+            /* Remove this line: list-style-type: none; */
+        }
+        #clearLeaderboardBtn {
+            background-color: #BC3B4A;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -58,6 +88,13 @@
             <label for="numTeams">Number of teams:</label>
             <input type="number" id="numTeams" min="2" value="2">
         </div>
+        <div class="column">
+            <div id="leaderboard">
+                <h2>Leaderboard</h2>
+                <ol id="leaderboardList"></ol>
+                <button id="clearLeaderboardBtn" onclick="clearLeaderboard()">Clear Leaderboard</button>
+            </div>
+        </div>
     </div>
     <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
@@ -65,14 +102,28 @@
 
     <script>
         let names = [];
-        fetch('data/names.json')
-            .then(response => response.json())
-            .then(data => {
-                names = data;
-                updatePlayerList();
-            })
-            .catch(error => console.error('Error loading names:', error));
+        let playerWins = {};
 
+        // Load names and initialize player wins
+        function initializeData() {
+            fetch('data/names.json')
+                .then(response => response.json())
+                .then(data => {
+                    names = data;
+                    // Initialize player wins from localStorage or create new
+                    playerWins = JSON.parse(localStorage.getItem('playerWins')) || {};
+                    console.log('Loaded playerWins:', playerWins);
+                    names.forEach(name => {
+                        if (!playerWins.hasOwnProperty(name)) {
+                            playerWins[name] = 0;
+                        }
+                    });
+                    localStorage.setItem('playerWins', JSON.stringify(playerWins));
+                    updatePlayerList();
+                    updateLeaderboard();
+                })
+                .catch(error => console.error('Error loading names:', error));
+        }
 
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
@@ -97,7 +148,13 @@
             const newName = document.getElementById('newName').value;
             if (newName && !names.includes(newName)) {
                 names.push(newName);
+                // Initialize wins for new player
+                if (!playerWins.hasOwnProperty(newName)) {
+                    playerWins[newName] = 0;
+                    localStorage.setItem('playerWins', JSON.stringify(playerWins));
+                }
                 updatePlayerList();
+                updateLeaderboard();
                 document.getElementById('newName').value = '';
             } else if (names.includes(newName)) {
                 alert(newName + ' already in list');
@@ -148,9 +205,57 @@
             window.location.href = 'game.html';
         }
 
+        function clearLeaderboard() {
+            if (confirm("Are you sure you want to clear the leaderboard? This action cannot be undone.")) {
+                // Clear only the leaderboard data
+                localStorage.removeItem('playerWins');
+                playerWins = {};
+                console.log('Leaderboard data cleared');
+                updateLeaderboard();
+            }
+        }
+
+        function updateLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = '';
+            
+            console.log('Updating leaderboard with:', playerWins);
+            
+            const sortedPlayers = Object.entries(playerWins)
+                .filter(([name, wins]) => wins > 0)  // Only include players with wins
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);  // Top 10 players
+
+            if (sortedPlayers.length === 0) {
+                leaderboardList.textContent = '...';
+            } else {
+                const ol = document.createElement('ol');
+                sortedPlayers.forEach(([name, wins]) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${name}: ${wins} win${wins !== 1 ? 's' : ''}`;
+                    ol.appendChild(li);
+                });
+                leaderboardList.appendChild(ol);
+            }
+        }
+
+        function resetLeaderboardData() {
+            localStorage.removeItem('playerWins');
+            playerWins = {};
+            console.log('Leaderboard data reset');
+            updateLeaderboard();
+        }
+
         document.getElementById('newName').addEventListener('keypress', handleKeyPress);
 
-        updatePlayerList();
+        // Call initializeData when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+            console.log('DOM content loaded, initializing data');
+        });
+
+        // For debugging: add this button to your HTML
+        // <button onclick="resetLeaderboardData()">Reset Leaderboard Data</button>
     </script>
 
     <style>

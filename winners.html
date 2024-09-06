@@ -46,12 +46,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const winningTeamsInfo = JSON.parse(localStorage.getItem('winningTeams'));
+
             if (winningTeamsInfo && winningTeamsInfo.length > 0) {
                 const winningTeamDiv = document.getElementById('winningTeam');
                 if (winningTeamsInfo.length === 1) {
                     winningTeamDiv.innerHTML = `
-                <h1>🎉 Congrats to ${winningTeamsInfo[0].teamName} 🎉</h1>
-            `;
+                        <h1>🎉 Congrats to ${winningTeamsInfo[0].teamName} 🎉</h1>
+                    `;
                     winningTeamsInfo[0].players.forEach(player => {
                         winningTeamDiv.innerHTML += `<h2>${player}</h2>`;
                     });
@@ -65,9 +66,12 @@
                     spread: 180,
                     origin: { x: 0.5, y: 0.5 }
                 });
+
+                console.log('Game completed successfully');
             } else {
                 document.body.innerHTML += '<p>No winning team found. Please go back and finish the game.</p>';
             }
+
             document.getElementById('newGameBtn').addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
