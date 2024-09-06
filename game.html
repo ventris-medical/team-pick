@@ -128,23 +128,36 @@
             margin-top: 10px;
         }
 
+        @keyframes flash-timer {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+
         .time-critical {
             color: #BC3B4A;
+            animation: flash-timer 1s linear infinite;
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .time-up {
             animation: pulse 0.5s infinite;
             color: #BC3B4A;
-            font-weight: bold;
         }
 
-        #time-up-message {
+        #combined-message {
             font-size: 2em;
             color: #BC3B4A;
             text-align: center;
@@ -152,15 +165,18 @@
             display: none;
         }
 
-        #stop-emojis {
-            font-size: 3em;
-            text-align: center;
-            display: none;
-        }
-
         @keyframes flash {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0; }
+
+            0%,
+            50%,
+            100% {
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                opacity: 0;
+            }
         }
 
         .flashing {
@@ -182,8 +198,7 @@
         <button class="timer-button" onclick="restartTimer()">Restart Timer</button>
         <div id="timer-display"></div>
     </div>
-    <div id="time-up-message"></div>
-    <div id="stop-emojis">🛑🛑🛑</div>
+    <div id="combined-message"></div>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
         style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
@@ -264,7 +279,7 @@
         const timerDisplay = document.getElementById('timer-display');
         const timerInput = document.getElementById('timer-input');
 
-        timerInput.addEventListener('keypress', function(event) {
+        timerInput.addEventListener('keypress', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault(); // Prevent form submission if within a form
                 startTimer();
@@ -282,10 +297,10 @@
                 return;
             }
 
-            document.getElementById('time-up-message').style.display = 'none';
-            document.getElementById('stop-emojis').style.display = 'none';
+            document.getElementById('combined-message').style.display = 'none';
             timerDisplay.classList.remove('time-up', 'time-critical');
             timerDisplay.style.color = ''; // Reset color
+            timerDisplay.style.animation = ''; // Reset animation
             updateTimerDisplay(seconds);
             timerInterval = setInterval(() => {
                 seconds--;
@@ -293,17 +308,17 @@
                 if (seconds <= 0) {
                     clearInterval(timerInterval);
                     timerDisplay.classList.add('time-up');
-                    document.getElementById('time-up-message').textContent = "Time's up!";
-                    document.getElementById('time-up-message').style.display = 'block';
-                    document.getElementById('stop-emojis').style.display = 'block';
-                    document.getElementById('stop-emojis').classList.add('flashing');
+                    document.getElementById('combined-message').innerHTML = "🛑🛑🛑 Time's up! 🛑🛑🛑";
+                    document.getElementById('combined-message').style.display = 'block';
+                    document.getElementById('combined-message').classList.add('flashing');
                     playAlertSound();
 
                     // Stop animations after 3 seconds, but keep elements visible and timer red
                     animationTimeout = setTimeout(() => {
-                        document.getElementById('stop-emojis').classList.remove('flashing');
-                        timerDisplay.classList.remove('time-up');
+                        document.getElementById('combined-message').classList.remove('flashing');
+                        timerDisplay.classList.remove('time-up', 'time-critical');
                         timerDisplay.style.color = '#BC3B4A'; // Keep timer red
+                        timerDisplay.style.animation = 'none'; // Stop timer flashing
                     }, 3000);
                 }
             }, 1000);
@@ -316,16 +331,16 @@
             timerInput.value = '60'; // Reset to default value
             timerDisplay.classList.remove('time-up', 'time-critical');
             timerDisplay.style.color = ''; // Reset color
-            document.getElementById('time-up-message').style.display = 'none';
-            document.getElementById('stop-emojis').style.display = 'none';
-            document.getElementById('stop-emojis').classList.remove('flashing');
+            timerDisplay.style.animation = ''; // Reset animation
+            document.getElementById('combined-message').style.display = 'none';
+            document.getElementById('combined-message').classList.remove('flashing');
         }
 
         function updateTimerDisplay(seconds) {
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             timerDisplay.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-            
+
             if (seconds <= 5) {
                 timerDisplay.classList.add('time-critical');
             } else {
