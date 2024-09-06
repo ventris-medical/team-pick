@@ -39,10 +39,22 @@
             display: inline-block;
             margin-top: 20px;
             margin-bottom: 20px;
-            text-align: left;
-            border: 1px solid #777777;
+            text-align: center;
+            border: 1px solid #5A7F71;
             border-radius: 5px;
-            padding: 5px 10px;
+            padding: 8px;
+            background-color: #212322;
+            color: #5A7F71;
+            text-decoration: none;
+            font-size: 1em;
+            width: 100px;
+            margin-left: 0;  /* Change this from auto to 0 */
+            margin-right: auto;
+        }
+
+        #shuffleLink:hover {
+            background-color: #5A7F71;
+            color: #212322;
         }
 
         .container {
@@ -63,7 +75,6 @@
         #leaderboard ol {
             color: white;
             padding-left: 20px;
-            /* Remove this line: list-style-type: none; */
         }
         #clearLeaderboardBtn {
             background-color: #BC3B4A;
@@ -75,6 +86,9 @@
             margin-top: 10px;
         }
     </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
 </head>
 
 <body>
@@ -87,38 +101,58 @@
             <ul id="playerList"></ul>
             <label for="numTeams">Number of teams:</label>
             <input type="number" id="numTeams" min="2" value="2">
+            <div>
+                <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
+            </div>
         </div>
         <div class="column">
             <div id="leaderboard">
                 <h2>Leaderboard</h2>
-                <ol id="leaderboardList"></ol>
+                <table id="leaderboardTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Wins</th>
+                            <th>Games Played</th>
+                            <th>Floater Count</th>
+                            <th>Win Ratio</th>
+                            <th>Win Ratio (No Floater)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardList"></tbody>
+                </table>
                 <button id="clearLeaderboardBtn" onclick="clearLeaderboard()">Clear Leaderboard</button>
             </div>
         </div>
     </div>
-    <a href="#" onclick="shuffleTeams()" id="shuffleLink">Shuffle</a>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
         style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
     <script>
         let names = [];
-        let playerWins = {};
+        let playerStats = {};
 
-        // Load names and initialize player wins
+        // Load names and initialize player stats
         function initializeData() {
             fetch('data/names.json')
                 .then(response => response.json())
                 .then(data => {
                     names = data;
-                    // Initialize player wins from localStorage or create new
-                    playerWins = JSON.parse(localStorage.getItem('playerWins')) || {};
-                    console.log('Loaded playerWins:', playerWins);
+                    // Initialize player stats from localStorage or create new
+                    playerStats = JSON.parse(localStorage.getItem('playerStats')) || {};
+                    console.log('Loaded playerStats:', playerStats);
                     names.forEach(name => {
-                        if (!playerWins.hasOwnProperty(name)) {
-                            playerWins[name] = 0;
+                        if (!playerStats.hasOwnProperty(name)) {
+                            playerStats[name] = {
+                                wins: 0,
+                                gamesPlayed: 0,
+                                floaterCount: 0,
+                                winsWithoutFloater: 0,
+                                gamesWithoutFloater: 0
+                            };
                         }
                     });
-                    localStorage.setItem('playerWins', JSON.stringify(playerWins));
+                    localStorage.setItem('playerStats', JSON.stringify(playerStats));
                     updatePlayerList();
                     updateLeaderboard();
                 })
@@ -149,9 +183,15 @@
             if (newName && !names.includes(newName)) {
                 names.push(newName);
                 // Initialize wins for new player
-                if (!playerWins.hasOwnProperty(newName)) {
-                    playerWins[newName] = 0;
-                    localStorage.setItem('playerWins', JSON.stringify(playerWins));
+                if (!playerStats.hasOwnProperty(newName)) {
+                    playerStats[newName] = {
+                        wins: 0,
+                        gamesPlayed: 0,
+                        floaterCount: 0,
+                        winsWithoutFloater: 0,
+                        gamesWithoutFloater: 0
+                    };
+                    localStorage.setItem('playerStats', JSON.stringify(playerStats));
                 }
                 updatePlayerList();
                 updateLeaderboard();
@@ -207,41 +247,73 @@
 
         function clearLeaderboard() {
             if (confirm("Are you sure you want to clear the leaderboard? This action cannot be undone.")) {
-                // Clear only the leaderboard data
-                localStorage.removeItem('playerWins');
-                playerWins = {};
+                localStorage.removeItem('playerStats');
+                playerStats = {};
+                names.forEach(name => {
+                    playerStats[name] = {
+                        wins: 0,
+                        gamesPlayed: 0,
+                        floaterCount: 0,
+                        winsWithoutFloater: 0,
+                        gamesWithoutFloater: 0
+                    };
+                });
+                localStorage.setItem('playerStats', JSON.stringify(playerStats));
                 console.log('Leaderboard data cleared');
                 updateLeaderboard();
             }
         }
 
         function updateLeaderboard() {
+            const leaderboardDiv = document.getElementById('leaderboard');
             const leaderboardList = document.getElementById('leaderboardList');
-            leaderboardList.innerHTML = '';
             
-            console.log('Updating leaderboard with:', playerWins);
+            console.log('Updating leaderboard with:', playerStats);
             
-            const sortedPlayers = Object.entries(playerWins)
-                .filter(([name, wins]) => wins > 0)  // Only include players with wins
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);  // Top 10 players
-
-            if (sortedPlayers.length === 0) {
-                leaderboardList.textContent = '...';
+            const playersWithData = Object.entries(playerStats).filter(([name, stats]) => stats.gamesPlayed > 0);
+            
+            if (playersWithData.length === 0) {
+                leaderboardDiv.innerHTML = '<h2>Leaderboard</h2><p>...</p>';
             } else {
-                const ol = document.createElement('ol');
-                sortedPlayers.forEach(([name, wins]) => {
-                    const li = document.createElement('li');
-                    li.textContent = `${name}: ${wins} win${wins !== 1 ? 's' : ''}`;
-                    ol.appendChild(li);
+                leaderboardList.innerHTML = '';
+                const sortedPlayers = playersWithData.sort((a, b) => b[1].wins - a[1].wins);
+
+                sortedPlayers.forEach(([name, stats]) => {
+                    const winRatio = (stats.wins / stats.gamesPlayed).toFixed(2);
+                    const winRatioWithoutFloater = stats.gamesWithoutFloater > 0 ? 
+                        (stats.winsWithoutFloater / stats.gamesWithoutFloater).toFixed(2) : '0.00';
+                    
+                    const row = `
+                        <tr>
+                            <td>${name}</td>
+                            <td>${stats.wins}</td>
+                            <td>${stats.gamesPlayed}</td>
+                            <td>${stats.floaterCount}</td>
+                            <td>${winRatio}</td>
+                            <td>${winRatioWithoutFloater}</td>
+                        </tr>
+                    `;
+                    leaderboardList.innerHTML += row;
                 });
-                leaderboardList.appendChild(ol);
+
+                // Initialize or refresh DataTable
+                if ($.fn.DataTable.isDataTable('#leaderboardTable')) {
+                    $('#leaderboardTable').DataTable().destroy();
+                }
+                $('#leaderboardTable').DataTable({
+                    paging: false,
+                    searching: false,
+                    ordering: true,
+                    info: false,
+                    dom: 'rt',
+                    order: [[1, 'desc']], // Sort by the second column (Wins) in descending order
+                });
             }
         }
 
         function resetLeaderboardData() {
-            localStorage.removeItem('playerWins');
-            playerWins = {};
+            localStorage.removeItem('playerStats');
+            playerStats = {};
             console.log('Leaderboard data reset');
             updateLeaderboard();
         }
@@ -289,6 +361,48 @@
         .player-name {
             flex-grow: 1;
         }
+    </style>
+
+    <style>
+        /* ... existing styles ... */
+
+        #leaderboardTable {
+            width: 100%;
+            color: white;
+            background-color: #212322;
+            border-collapse: collapse;
+        }
+
+        #leaderboardTable th,
+        #leaderboardTable td {
+            padding: 8px;
+            background-color: #212322; /* Match website background */
+        }
+
+        #leaderboardTable th {
+            background-color: #5A7F71;
+            color: #212322;
+            border-bottom: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable td {
+            border-left: 1px solid #5A7F71;
+            border-right: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable tr:last-child td {
+            border-bottom: 1px solid #5A7F71;
+        }
+
+        #leaderboardTable td:first-child {
+            border-left: none;
+        }
+
+        #leaderboardTable td:last-child {
+            border-right: none;
+        }
+
+        /* ... rest of the styles ... */
     </style>
 </body>
 
