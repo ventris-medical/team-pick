@@ -127,6 +127,7 @@
         #timer-display {
             font-size: 3em;
             margin-top: 10px;
+            margin-bottom: 5px;
         }
 
         @keyframes flash-timer {
@@ -162,7 +163,7 @@
             font-size: 2em;
             color: #BC3B4A;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 0;
             display: none;
         }
 
@@ -218,6 +219,11 @@
             justify-content: flex-start;
             margin-bottom: 10px;
         }
+
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 
@@ -233,8 +239,8 @@
         <button class="timer-button" onclick="startTimer()">Start Timer</button>
         <button class="timer-button" onclick="restartTimer()">Restart Timer</button>
         <div id="timer-display"></div>
+        <div id="combined-message"></div>
     </div>
-    <div id="combined-message"></div>
     <img src="images/ventris-logo-big.png" alt="Ventris Logo" class="desktop-only-image ventris-logo"
         style="display: block; margin: 0 auto; max-width: 100px; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
 
